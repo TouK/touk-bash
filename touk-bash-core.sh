@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# This is a part of bash-deploy.
+# This is a part of touk-bash.
 # Developed by TouK.
 
 LAST_EXIT_STATUS=0

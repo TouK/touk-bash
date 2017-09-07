@@ -17,6 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# This is a part of bash-deploy.
+# Developed by TouK.
+
 LAST_EXIT_STATUS=0
 LAST_COMMAND=""
 
@@ -99,7 +102,7 @@ confirm() {
     esac
 }
 
-# Checks if there are sufficent args otherwise executes printHelp
+# Checks if there are sufficient args otherwise executes printHelp
 # Relies on printHelp function
 # Args:
 #   $1 actual args count

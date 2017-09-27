@@ -100,7 +100,7 @@ printChangelog() {
 #   $1 - current branch
 verifyCleanGit() {
     put "Your working branch is $1"
-    verifyEverythingIsCommited
+    verifyEverythingIsCommitted
     verifyEverythingIsPushed $1
     put "Your git status looks fine. Continuing."
     br

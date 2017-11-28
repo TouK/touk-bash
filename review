@@ -28,36 +28,33 @@ DIR="$(dirname "$(readlink -f "$0")")"
 SUFFIX="rev"
 COMMIT_MSG_HOOK_NAME="commit-msg"
 
-# $1 - configuration alias
 obtainReviewRemote() {
-    reviewRemote=$(git config --get review.$1.remote)
+    reviewRemote=$(git config --get review.remote)
     if [ "$reviewRemote" == "" ]; then
         actualRemote=$(git remote)
-        warn "You don't have review.$1.remote config option set in your git config."
+        warn "You don't have review.remote config option set in your git config."
         put "Your actual remote is $actualRemote, so what you probably need to do is:"
-        put "    git config --add review.$1.remote $actualRemote"
+        put "    git config --add review.remote $actualRemote"
         exit 1
     fi
 }
 
-# $1 - configuration alias
 obtainReviewBranch() {
-    reviewBranch=$(git config --get review.$1.branch)
+    reviewBranch=$(git config --get review.branch)
     if [ "$reviewBranch" == "" ]; then
-        warn "You don't have review.$1.branch config option set in your git config."
+        warn "You don't have review.branch config option set in your git config."
         put "It is probably master or develop so you can add it with:"
-        put "    git config --add review.$1.branch master"
+        put "    git config --add review.branch master"
         exit 1
     fi
 }
 
-# $1 - configuration alias
 obtainReviewUrl() {
-    reviewUrl=$(git config --get review.$1.url)
+    reviewUrl=$(git config --get review.url)
     if [ "$reviewUrl" == "" ]; then
-        warn "You don't have review.$1.url config option set in your git config."
+        warn "You don't have review.url config option set in your git config."
         put "Set it to your gerrit HTTP url like http://review.example.com:"
-        put "    git config --add review.$1.url http://review.example.com"
+        put "    git config --add review.url http://review.example.com"
         exit 1
     fi
 }
@@ -124,7 +121,7 @@ review() {
     # Create rev branch:
     # - new one if there is no rev branch yet for this feature
     # - with an increased number if there is already some rev branches for this feature
-    coreBranchName="${currentBranch}_${SUFFIX}_$1"
+    coreBranchName="${currentBranch}_${SUFFIX}"
     # Search for last known revision branch:
     # - grep by current branch name
     # - second output column is a ref name
@@ -137,7 +134,7 @@ review() {
     commitMessage=${*:2}
 
     if [ "$lastRevBranch" == "" ] && [ "$2" == "" ]; then
-        warn "This is your first review to $1. You need to provide a commit message as a second argument."
+        warn "This is your first review to $reviewRemote. You need to provide a commit message as a second argument."
         exit 1
     fi
 
@@ -198,7 +195,6 @@ review() {
     put "      Review remote: $reviewRemote"
     put "      Review branch: HEAD:refs/for/$reviewBranch"
     put ""
-    put "       Review alias: $1"
     put "    Revision branch: $revBranch"
     put "          Change-Id: $changeId"
     put "                URL: ${reviewUrl}/#/q/${changeId}"
@@ -206,9 +202,9 @@ review() {
     hr
 }
 
-obtainReviewRemote $1
-obtainReviewBranch $1
-obtainReviewUrl $1
+obtainReviewRemote
+obtainReviewBranch
+obtainReviewUrl
 obtainCurrentBranch
 verifyGit
-review $1 $2
+review $1

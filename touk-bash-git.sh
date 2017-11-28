@@ -26,7 +26,6 @@ DIR="$(dirname "$(readlink -f "$0")")"
 
 SED_COMMAND=`which sed`
 SORT_COMMAND=`which sort`
-GIT_LOG_PRETTY_FORMAT="--pretty=format:'%C(yellow)%h %Cred%ad %Cblue%an%Cgreen%d %Creset%s' --date=iso"
 
 if [ `uname -s` == "Darwin" ]; then
     # In case you are running OS X 'sort' and 'sed' commands are different then GNU versions
@@ -112,7 +111,7 @@ verifyGitHookExists() {
 # $1 - base branch
 # $2 - current branch
 verifyBaseBranchIsMerged() {
-    notMerged=$(git --no-pager log $2..$1 $GIT_LOG_PRETTY_FORMAT)
+    notMerged=$(git --no-pager log $2..$1 --pretty=format:'%C(yellow)%h %Cred%ad %Cblue%an%Cgreen%d %Creset%s' --date=iso)
     if [ "$notMerged" != "" ]; then
         warn "These commits are not yet merged from $1 to your branch $2."
         echo "$notMerged"
@@ -128,7 +127,7 @@ verifyBaseBranchIsMerged() {
 # $1 - base remote
 # $2 - base branch
 verifyBaseBranchIsUpToDate() {
-    notMerged=$(git --no-pager log $2..$1/$2 $GIT_LOG_PRETTY_FORMAT)
+    notMerged=$(git --no-pager log $2..$1/$2 --pretty=format:'%C(yellow)%h %Cred%ad %Cblue%an%Cgreen%d %Creset%s' --date=iso)
     if [ "$notMerged" != "" ]; then
         warn "These commits are not yet merged from $1/$2 to your local from $2:"
         echo "$notMerged"
@@ -201,13 +200,13 @@ printChangelog() {
     twoLastHashesInOneLine=$(echo $twoLastTags | awk '{print $1}'  | tr "\\n" "-");
     twoLastHashesInOneLineWithTwoDots=${twoLastHashesInOneLine/-/..};
     twoLastHashesInOneLineWithTwoDotsNoMinusAtTheEnd=$(echo $twoLastHashesInOneLineWithTwoDots | $SED_COMMAND 's/-$//');
-    exe git --no-pager log --pretty=oneline --no-merges $GIT_LOG_PRETTY_FORMAT $twoLastHashesInOneLineWithTwoDotsNoMinusAtTheEnd
+    exe git --no-pager log --pretty=oneline --no-merges --pretty=format:'%C(yellow)%h %Cred%ad %Cblue%an%Cgreen%d %Creset%s' --date=iso $twoLastHashesInOneLineWithTwoDotsNoMinusAtTheEnd
 }
 
 # $1 - base branch
 # $2 - current branch
 compareBranches() {
     put "Compare branch $1 with $2:"
-    exe git --no-pager log $1..$2 $GIT_LOG_PRETTY_FORMAT --date=iso
+    exe git --no-pager log $1..$2 --pretty=format:'%C(yellow)%h %Cred%ad %Cblue%an%Cgreen%d %Creset%s' --date=iso --date=iso
     br
 }

@@ -1,0 +1,214 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# This is a part of touk-bash.
+# Developed by TouK.
+
+# Includes
+DIR="$(dirname "$(readlink -f "$0")")"
+. "$DIR/touk-bash-core.sh"
+. "$DIR/touk-bash-git.sh"
+
+SUFFIX="rev"
+COMMIT_MSG_HOOK_NAME="commit-msg"
+
+# $1 - configuration alias
+obtainReviewRemote() {
+    reviewRemote=$(git config --get review.$1.remote)
+    if [ "$reviewRemote" == "" ]; then
+        actualRemote=$(git remote)
+        warn "You don't have review.$1.remote config option set in your git config."
+        put "Your actual remote is $actualRemote, so what you probably need to do is:"
+        put "    git config --add review.$1.remote $actualRemote"
+        exit 1
+    fi
+}
+
+# $1 - configuration alias
+obtainReviewBranch() {
+    reviewBranch=$(git config --get review.$1.branch)
+    if [ "$reviewBranch" == "" ]; then
+        warn "You don't have review.$1.branch config option set in your git config."
+        put "It is probably master or develop so you can add it with:"
+        put "    git config --add review.$1.branch master"
+        exit 1
+    fi
+}
+
+# $1 - configuration alias
+obtainReviewUrl() {
+    reviewUrl=$(git config --get review.$1.url)
+    if [ "$reviewUrl" == "" ]; then
+        warn "You don't have review.$1.url config option set in your git config."
+        put "Set it to your gerrit HTTP url like http://review.example.com:"
+        put "    git config --add review.$1.url http://review.example.com"
+        exit 1
+    fi
+}
+
+obtainCurrentBranch() {
+    currentBranch=$(git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3-)
+}
+
+printHelp() {
+    put "Usage:"
+    put "$0 <configuration alias> \"commit message\""
+    br
+    put "Examples:"
+    put "$0 touk \"Fix tests\""
+    put "$0 gitlab \"Pushing to GitLab now\""
+    br
+}
+
+printRemoteHelp() {
+    br
+    put "Example remote configuration:"
+    put "[remote \"origin\"]"
+    put "    url = ssh://john@review.example.com:29418/duhproject"
+    br
+    put "You can add upstream with: git remote add <remote name> <remote url>"
+    br
+}
+
+# $1 - branch core name without number
+# $2 - last rev branch for this core branch name
+createRevBranch() {
+    put "Last known branch for this review is $2"
+    if [ "$2" == "" ]; then
+        revBranch="$1_1"
+        put "No branches exist for this review."
+    else
+        put "Branches for this review already exist. New number is assigned."
+        lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
+        nextBranchNumber=$(( lastBranchNumber + 1))
+        revBranch="$1_$nextBranchNumber"
+    fi
+
+    put "Creating new branch for review $revBranch"
+    exe git branch $revBranch
+}
+
+verifyGit() {
+    verifyGitHookExists $COMMIT_MSG_HOOK_NAME $reviewUrl
+    verifyUpstreamExists $reviewRemote
+    verifyBranchOnUpstream $reviewBranch $reviewRemote
+    verifyCleanGit $reviewRemote $currentBranch
+    verifyBaseBranchIsMerged $reviewBranch $currentBranch
+    verifyBaseBranchIsUpToDate $reviewRemote $reviewBranch
+    green "Your git status looks fine!"
+    br
+}
+
+# $1 - configuration alias
+# $2 - commit message
+review() {
+    put "Fetch and prune old branches from $reviewRemote"
+    exe git fetch -p $reviewRemote
+
+    # Create rev branch:
+    # - new one if there is no rev branch yet for this feature
+    # - with an increased number if there is already some rev branches for this feature
+    coreBranchName="${currentBranch}_${SUFFIX}_$1"
+    # Search for last known revision branch:
+    # - grep by current branch name
+    # - second output column is a ref name
+    # - take only third part of /refs/heads/name_number
+    # - sort by number
+    # - use branch with highest number
+    lastRevBranch=$(git ls-remote --heads --quiet | grep ${coreBranchName} | cut -f 2 | cut -d '/' -f 3- | $SORT_COMMAND -r -V | head -n 1)
+    # All parameters except first one.
+    # Warning - potential bash injection here! :)
+    commitMessage=${*:2}
+
+    if [ "$lastRevBranch" == "" ] && [ "$2" == "" ]; then
+        warn "This is your first review to $1. You need to provide a commit message as a second argument."
+        exit 1
+    fi
+
+    compareBranches $reviewBranch $currentBranch
+    hr
+
+    exe git checkout $reviewBranch
+    # revBranch is assigned
+    createRevBranch $coreBranchName $lastRevBranch
+    exe git checkout $revBranch
+    exe git merge --squash $currentBranch
+    exe git add -A
+
+    # If branch already exists, get last commit message with Change-Id and apply it to commit message
+    lastChangeId=""
+    if [ "$lastRevBranch" != "" ]; then
+        lastCommitMessage=$(git log -1 $reviewRemote/$lastRevBranch --pretty=format:'%s%n%n%b')
+        commitMessage=$lastCommitMessage
+        put "Your commit message was overridden by first review commit message."
+    fi
+
+    # Commit and check that Change-Ids matches
+    exe git commit -m "$commitMessage"
+    compareBranches $reviewBranch $revBranch
+
+    changeId=$(git log -1 | grep Change-Id | awk '{print $2}')
+    put "Change-Id for this commit is $changeId"
+    if [ "$changeId" == "" ]; then
+        warn "Change-Id is empty! Do you have commit-msg enabled for this repository?"
+        exit 1
+    fi
+
+    if [ "$lastChangeId" != "" ] && [ "$lastChangeId" != "$changeId" ]; then
+        warn "Commited Change-Id is different than previous branch Change-Id"
+        put "Expected: $lastChangeId"
+        put "Acutal:   $changeId"
+        exit 1
+    fi
+
+    put "Pushing revision branch $revBranch to remote $reviewRemote"
+
+    # --no-thin:
+    # https://code.google.com/p/gerrit/issues/detail?id=2296
+    # http://stackoverflow.com/a/23610917/411905
+    exe git push --no-thin $reviewRemote HEAD:refs/for/$reviewBranch
+
+    # Push revision branch to $reviewRemote
+    put "Pushing revision branch $revBranch to remote $reviewRemote"
+    exe git push --no-thin -u $reviewRemote $revBranch
+
+    exe git checkout $currentBranch
+
+    # Credits and standing ovation
+    hr
+    put "                Summary"
+    put ""
+    put "     Working branch: $currentBranch"
+    put "      Review remote: $reviewRemote"
+    put "      Review branch: HEAD:refs/for/$reviewBranch"
+    put ""
+    put "       Review alias: $1"
+    put "    Revision branch: $revBranch"
+    put "          Change-Id: $changeId"
+    put "                URL: ${reviewUrl}/#/q/${changeId}"
+    put ""
+    hr
+}
+
+obtainReviewRemote $1
+obtainReviewBranch $1
+obtainReviewUrl $1
+obtainCurrentBranch
+verifyGit
+review $1 $2

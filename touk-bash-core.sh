@@ -32,6 +32,16 @@ put() {
   echo -e "\033[33m  >> $@\033[0m"
 }
 
+# Informative output indented line with green color
+# Args:
+#   $@ - many args
+# Example:
+#   green "Everything is fine!"
+green() {
+  echo -e "\033[32m  >> $@\033[0m"
+}
+
+
 # Warning output indented line with red color
 # Args:
 #   $@ - many args

@@ -112,8 +112,7 @@ verifyGit() {
     br
 }
 
-# $1 - configuration alias
-# $2 - commit message
+# $1 - commit message
 review() {
     put "Fetch and prune old branches from $reviewRemote"
     exe git fetch -p $reviewRemote
@@ -129,11 +128,11 @@ review() {
     # - sort by number
     # - use branch with highest number
     lastRevBranch=$(git ls-remote --heads --quiet | grep ${coreBranchName} | cut -f 2 | cut -d '/' -f 3- | $SORT_COMMAND -r -V | head -n 1)
-    # All parameters except first one.
+    # All parameters.
     # Warning - potential bash injection here! :)
-    commitMessage=${*:2}
+    commitMessage=${*:1}
 
-    if [ "$lastRevBranch" == "" ] && [ "$2" == "" ]; then
+    if [ "$lastRevBranch" == "" ] && [ "$commitMessage" == "" ]; then
         warn "This is your first review to $reviewRemote. You need to provide a commit message as a second argument."
         exit 1
     fi

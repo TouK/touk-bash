@@ -62,12 +62,13 @@ createRevBranch() {
     else
         put "Branches for this review already exist. New number is assigned."
         lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
-        nextBranchNumber=$(( lastBranchNumber + 1))
+        nextBranchNumber=$(( lastBranchNumber + 1 ))
         revBranch="$1_$nextBranchNumber"
     fi
 
     put "Creating new branch for review $revBranch"
     exe git branch $revBranch
+    echo $revBranch
 }
 
 verifyGit() {
@@ -102,7 +103,7 @@ review() {
     commitMessage=${*:1}
 
     if [ "$lastRevBranch" == "" ] && [ "$commitMessage" == "" ]; then
-        warn "This is your first review to $reviewRemote. You need to provide a commit message as a second argument."
+        warn "This is your first review to $reviewRemote. You need to provide a commit message as an argument."
         exit 1
     fi
 
@@ -110,8 +111,7 @@ review() {
     hr
 
     exe git checkout $reviewBranch
-    # revBranch is assigned
-    createRevBranch $coreBranchName $lastRevBranch
+    revBranch=$(createRevBranch $coreBranchName $lastRevBranch)
     exe git checkout $revBranch
     exe git merge --squash $currentBranch
     exe git add -A

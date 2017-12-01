@@ -20,20 +20,22 @@
 # This is a part of touk-bash.
 # Developed by TouK.
 
-# Includes
-DIR="$(dirname "$(readlink -f "$0")")"
-. "$DIR/touk-bash-core.sh"
-
 SED_COMMAND=`which sed`
 SORT_COMMAND=`which sort`
+READLINK_COMMAND=`which readlink`
 
 if [ `uname -s` == "Darwin" ]; then
-    # In case you are running OS X 'sort' and 'sed' commands are different then GNU versions
-    # You need to install gnu version of this commands which are named with g-prefix
-    # You may install it with: 'brew install coreutils' and 'brew install gnu-sed'
+    # 'sort', 'sed' and 'readlink' commands available in macOS behave differently to their GNU counterparts
+    # In order to run this script on macOS you may need to install gnu version of these commands
+    # You can install these with: 'brew install coreutils' and 'brew install gnu-sed'
     SED_COMMAND=`which gsed`
     SORT_COMMAND=`which gsort`
+    READLINK_COMMAND=`which greadlink`
 fi
+
+# Includes
+DIR="$(dirname "$($READLINK_COMMAND -f "$0")")"
+. "$DIR/touk-bash-core.sh"
 
 # Verify if you have everything committed
 # Args: no-arg

@@ -27,46 +27,10 @@ if [ "x$TOUK_BASH_HOME" = "x" ]; then
 fi
 
 # Includes
-. "$TOUK_BASH_HOME/touk-bash-git.sh"
-. "$TOUK_BASH_HOME/touk-bash-macos.sh"
+. "$TOUK_BASH_HOME/touk-bash-gerrit.sh"
 
 SUFFIX="rev"
 COMMIT_MSG_HOOK_NAME="commit-msg"
-
-obtainReviewRemote() {
-    reviewRemote=$(git config --get review.remote)
-    if [ "$reviewRemote" == "" ]; then
-        actualRemote=$(git remote)
-        warn "You don't have review.remote config option set in your git config."
-        put "Your actual remote is $actualRemote, so what you probably need to do is:"
-        put "    git config --add review.remote $actualRemote"
-        exit 1
-    fi
-}
-
-obtainReviewBranch() {
-    reviewBranch=$(git config --get review.branch)
-    if [ "$reviewBranch" == "" ]; then
-        warn "You don't have review.branch config option set in your git config."
-        put "It is probably master or develop so you can add it with:"
-        put "    git config --add review.branch master"
-        exit 1
-    fi
-}
-
-obtainReviewUrl() {
-    reviewUrl=$(git config --get review.url)
-    if [ "$reviewUrl" == "" ]; then
-        warn "You don't have review.url config option set in your git config."
-        put "Set it to your gerrit HTTP url like http://review.example.com:"
-        put "    git config --add review.url http://review.example.com"
-        exit 1
-    fi
-}
-
-obtainCurrentBranch() {
-    currentBranch=$(git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3-)
-}
 
 printHelp() {
     put "Usage:"
@@ -206,9 +170,9 @@ review() {
     hr
 }
 
-obtainReviewRemote
-obtainReviewBranch
-obtainReviewUrl
-obtainCurrentBranch
+reviewRemote=$(obtainReviewRemote)
+reviewBranch=$(obtainReviewBranch)
+reviewUrl=$(obtainReviewUrl)
+currentBranch=$(obtainCurrentBranch)
 verifyGit
 review $1

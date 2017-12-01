@@ -26,6 +26,7 @@ if [ "x$TOUK_BASH_HOME" = "x" ]; then
     exit 1
 fi
 
+# Includes
 . "$TOUK_BASH_HOME/touk-bash-git.sh"
 . "$TOUK_BASH_HOME/touk-bash-macos.sh"
 

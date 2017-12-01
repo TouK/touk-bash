@@ -20,19 +20,15 @@
 # This is a part of touk-bash.
 # Developed by TouK.
 
-READLINK_COMMAND=`which readlink`
-
-if [ `uname -s` == "Darwin" ]; then
-    # 'readlink' command available in macOS behaves differently to its GNU counterpart
-    # In order to run this script on macOS you may need to install GNU version of this command
-    # You can install it with: 'brew install coreutils'
-    READLINK_COMMAND=`which greadlink`
+if [ "x$TOUK_BASH_HOME" = "x" ]; then
+    echo "You need to set up environment property TOUK_BASH_HOME to point to your TouK bash installation folder."
+    echo "For example in your ~/.profile configuration file: TOUK_BASH_HOME=\"/home/$USER/dev/touk-bash\""
+    exit 1
 fi
 
 # Includes
-DIR="$(dirname "$($READLINK_COMMAND -f "$0")")"
-. "$DIR/touk-bash-core.sh"
-. "$DIR/touk-bash-git.sh"
+. "$TOUK_BASH_HOME/touk-bash-git.sh"
+. "$TOUK_BASH_HOME/touk-bash-macos.sh"
 
 SUFFIX="rev"
 COMMIT_MSG_HOOK_NAME="commit-msg"

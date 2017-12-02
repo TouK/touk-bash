@@ -41,9 +41,8 @@ printHelp() {
 # Verifies that the specified branch is merged to the review branch on the review remote
 # Args:
 #   $1 - branches to be verified
-areCurrentBranchesClosed() {
-    originBranches=$1
-    lastReviewBranch=$(echo "$originBranches" | grep _${REVIEW_SUFFIX}_ | head -1 | cut -f 3- -d /)
+branchesAreClosed() {
+    lastReviewBranch=$(echo "$1" | grep _${REVIEW_SUFFIX}_ | head -1 | cut -f 3- -d /)
     if [ "$lastReviewBranch" == "" ]; then
         return 1
     fi
@@ -78,12 +77,15 @@ printBranches() {
 # Args:
 #   $1 - branch to be cleaned up
 cleanupBranch() {
-    upstreamBranchesToDelete=$(git ls-remote --heads --quiet origin | grep ${1} | cut -f 2- | $SORT_COMMAND -r -V )
-    localBranchesToDelete=$(git branch | awk -F ' +' '! /\(no branch\)/ {print $2}' | grep ${1})
+    put "Cleaning up $currentBranch branch"
+    br
+
+    upstreamBranchesToDelete=$(git ls-remote --heads --quiet $reviewRemote | grep $1 | cut -f 2- | $SORT_COMMAND -r -V )
+    localBranchesToDelete=$(git branch | awk -F ' +' '! /\(no branch\)/ {print $2}' | grep $1)
 
     put "Checking if branch $1 is merged to $reviewBranch with Gerrit"
 
-    if areCurrentBranchesClosed "$upstreamBranchesToDelete" || areCurrentBranchesClosed "$localBranchesToDelete" ; then
+    if branchesAreClosed "$upstreamBranchesToDelete" || branchesAreClosed "$localBranchesToDelete" ; then
         green "Branch is merged to $reviewBranch -> can be safely deleted"
     else
         warn "Branch is not merged to $reviewBranch, are you sure you want to delete it?"
@@ -112,7 +114,7 @@ cleanupBranch() {
 # Args: no-arg
 finalize() {
     put "Prune old branches..."
-    exe git fetch -p origin
+    exe git fetch -p $reviewRemote
 
     put "Your actual active branches"
     exe git branch -avvl
@@ -124,16 +126,13 @@ finalize() {
 obtainReviewBranch
 obtainReviewRemote
 obtainReviewUrl
+obtainCurrentBranch
 
 case $# in
-0)  obtainCurrentBranch ;;
-1)  currentBranch=$1 ;;
+0)  cleanupBranch $currentBranch ;;
+1)  cleanupBranch $1 ;;
 *)  printHelp
     exit 1 ;;
 esac
 
-put "Cleaning up $currentBranch branch"
-br
-
-cleanupBranch $currentBranch
 finalize

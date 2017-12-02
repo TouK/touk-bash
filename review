@@ -27,6 +27,7 @@ if [ "x$TOUK_BASH_HOME" = "x" ]; then
 fi
 
 # Includes
+. "$TOUK_BASH_HOME/touk-bash-core.sh"
 . "$TOUK_BASH_HOME/touk-bash-macos.sh"
 . "$TOUK_BASH_HOME/touk-bash-git.sh"
 . "$TOUK_BASH_HOME/touk-bash-gerrit.sh"

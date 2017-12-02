@@ -23,12 +23,18 @@
 # Includes
 . "$TOUK_BASH_HOME/touk-bash-core.sh"
 
-REVIEW_SUFFIX="rev"
+# Declares the review suffix and makes it available in global scope
+# Args: no-arg
+obtainReviewSuffix() {
+    reviewSuffix="rev"
+}
 
+# Obtains the name of the review remote from git config and makes it available in global scope
+# Args: no-arg
 obtainReviewRemote() {
     reviewRemote=$(git config --get review.remote)
     if [ "$reviewRemote" == "" ]; then
-        actualRemote=$(git remote)
+        local actualRemote=$(git remote)
         warn "You don't have review.remote config option set in your git config."
         put "Your actual remote is $actualRemote, so what you probably need to do is:"
         put "    git config --add review.remote $actualRemote"
@@ -36,6 +42,8 @@ obtainReviewRemote() {
     fi
 }
 
+# Obtains the name of the review branch from git config and makes it available in global scope
+# Args: no-arg
 obtainReviewBranch() {
     reviewBranch=$(git config --get review.branch)
     if [ "$reviewBranch" == "" ]; then
@@ -46,6 +54,8 @@ obtainReviewBranch() {
     fi
 }
 
+# Obtains the review url from git config and makes it available in global scope
+# Args: no-arg
 obtainReviewUrl() {
     reviewUrl=$(git config --get review.url)
     if [ "$reviewUrl" == "" ]; then

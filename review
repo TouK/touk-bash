@@ -92,7 +92,7 @@ review() {
     # Create rev branch:
     # - new one if there is no rev branch yet for this feature
     # - with an increased number if there is already some rev branches for this feature
-    coreBranchName="${currentBranch}_${REVIEW_SUFFIX}"
+    coreBranchName="${currentBranch}_${reviewSuffix}"
     # Search for last known revision branch:
     # - grep by current branch name
     # - second output column is a ref name
@@ -175,6 +175,7 @@ review() {
 obtainReviewRemote
 obtainReviewBranch
 obtainReviewUrl
+obtainReviewSuffix
 obtainCurrentBranch
 verifyGit
 review $1

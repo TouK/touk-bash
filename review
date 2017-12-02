@@ -78,16 +78,6 @@ printHelp() {
     br
 }
 
-printRemoteHelp() {
-    br
-    put "Example remote configuration:"
-    put "[remote \"origin\"]"
-    put "    url = ssh://john@review.example.com:29418/duhproject"
-    br
-    put "You can add upstream with: git remote add <remote name> <remote url>"
-    br
-}
-
 # $1 - branch core name without number
 # $2 - last rev branch for this core branch name
 createRevBranch() {

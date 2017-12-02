@@ -29,7 +29,7 @@
 verifyEverythingIsCommitted() {
     gitCommitStatus=$(git status --porcelain)
     if [ "$gitCommitStatus" != "" ]; then
-        warn  "You have uncommitted files."
+        warn "You have uncommitted files."
         put "Your git status:"
         exe git status
         put "Sorry. Rules are rules. Aborting!"
@@ -135,7 +135,13 @@ verifyUpstreamExists() {
     if [ "$remotes" == "" ]; then
         warn "There is no remote with name $1. Aborting!"
         exe git remote -v
-        printRemoteHelp
+        br
+        put "Example remote configuration:"
+        put "[remote \"origin\"]"
+        put "    url = ssh://john@review.example.com:29418/duhproject"
+        br
+        put "You can add upstream with: git remote add <remote name> <remote url>"
+        br
         exit 1
     fi
 

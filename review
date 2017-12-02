@@ -27,9 +27,10 @@ if [ "x$TOUK_BASH_HOME" = "x" ]; then
 fi
 
 # Includes
+. "$TOUK_BASH_HOME/touk-bash-macos.sh"
+. "$TOUK_BASH_HOME/touk-bash-git.sh"
 . "$TOUK_BASH_HOME/touk-bash-gerrit.sh"
 
-SUFFIX="rev"
 COMMIT_MSG_HOOK_NAME="commit-msg"
 
 printHelp() {
@@ -57,13 +58,13 @@ printRemoteHelp() {
 createRevBranch() {
     put "Last known branch for this review is $2"
     if [ "$2" == "" ]; then
-        revBranch="$1_1"
+        local revBranch="$1_1"
         put "No branches exist for this review."
     else
         put "Branches for this review already exist. New number is assigned."
-        lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
-        nextBranchNumber=$(( lastBranchNumber + 1 ))
-        revBranch="$1_$nextBranchNumber"
+        local lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
+        local nextBranchNumber=$(( lastBranchNumber + 1 ))
+        local revBranch="$1_$nextBranchNumber"
     fi
 
     put "Creating new branch for review $revBranch"
@@ -90,7 +91,7 @@ review() {
     # Create rev branch:
     # - new one if there is no rev branch yet for this feature
     # - with an increased number if there is already some rev branches for this feature
-    coreBranchName="${currentBranch}_${SUFFIX}"
+    coreBranchName="${currentBranch}_${REVIEW_SUFFIX}"
     # Search for last known revision branch:
     # - grep by current branch name
     # - second output column is a ref name
@@ -170,9 +171,9 @@ review() {
     hr
 }
 
-reviewRemote=$(obtainReviewRemote)
-reviewBranch=$(obtainReviewBranch)
-reviewUrl=$(obtainReviewUrl)
-currentBranch=$(obtainCurrentBranch)
+obtainReviewRemote
+obtainReviewBranch
+obtainReviewUrl
+obtainCurrentBranch
 verifyGit
 review $1

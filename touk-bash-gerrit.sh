@@ -21,7 +21,9 @@
 # Developed by TouK.
 
 # Includes
-. "$TOUK_BASH_HOME/touk-bash-git.sh"
+. "$TOUK_BASH_HOME/touk-bash-core.sh"
+
+REVIEW_SUFFIX="rev"
 
 obtainReviewRemote() {
     reviewRemote=$(git config --get review.remote)
@@ -32,7 +34,6 @@ obtainReviewRemote() {
         put "    git config --add review.remote $actualRemote"
         exit 1
     fi
-    echo $reviewRemote
 }
 
 obtainReviewBranch() {
@@ -43,7 +44,6 @@ obtainReviewBranch() {
         put "    git config --add review.branch master"
         exit 1
     fi
-    echo $reviewBranch
 }
 
 obtainReviewUrl() {
@@ -54,5 +54,4 @@ obtainReviewUrl() {
         put "    git config --add review.url http://review.example.com"
         exit 1
     fi
-    echo $reviewUrl
 }

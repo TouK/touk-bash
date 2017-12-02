@@ -1,0 +1,139 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# This is a part of touk-bash.
+# Developed by TouK.
+
+if [ "x$TOUK_BASH_HOME" = "x" ]; then
+    echo "You need to set up environment property TOUK_BASH_HOME to point to your TouK bash installation folder."
+    echo "For example in your ~/.profile configuration file: TOUK_BASH_HOME=\"/home/$USER/dev/touk-bash\""
+    exit 1
+fi
+
+# Includes
+. "$TOUK_BASH_HOME/touk-bash-core.sh"
+. "$TOUK_BASH_HOME/touk-bash-macos.sh"
+. "$TOUK_BASH_HOME/touk-bash-git.sh"
+. "$TOUK_BASH_HOME/touk-bash-gerrit.sh"
+
+printHelp() {
+    put "Usage:"
+    put "$0 [branchName]"
+    br
+}
+
+# Verifies that the specified branch is merged to the review branch on the review remote
+# Args:
+#   $1 - branches to be verified
+areCurrentBranchesClosed() {
+    originBranches=$1
+    lastReviewBranch=$(echo "$originBranches" | grep _${REVIEW_SUFFIX}_ | head -1 | cut -f 3- -d /)
+    if [ "$lastReviewBranch" == "" ]; then
+        return 1
+    fi
+    branchExistsOnRemote=$(git ls-remote --heads --quiet | grep $lastReviewBranch)
+    if [ "$branchExistsOnRemote" == "" ]; then
+        changeId=$(git log -1 $lastReviewBranch | grep "Change-Id:" | awk '{print $2}')
+    else
+        changeId=$(git log -1 ${reviewRemote}/$lastReviewBranch | grep "Change-Id:" | awk '{print $2}')
+    fi
+
+    isChangeMerged=$(git log $reviewBranch --grep=$changeId)
+    if [ "$isChangeMerged" == "" ]; then
+        return 1
+    else
+        exe git log $reviewBranch --grep=$changeId
+        br
+        put "Branch $currentBranch was reviewed here: ${reviewUrl}/#/q/${changeId}"
+        hr
+        return 0
+    fi
+}
+
+# $1 - branches
+printBranches() {
+    for branch in $1
+    do
+        put "  $branch"
+    done
+}
+
+# Cleans up a single branch by removing it all the related review branches both locally and on the remote
+# Args:
+#   $1 - branch to be cleaned up
+cleanupBranch() {
+    upstreamBranchesToDelete=$(git ls-remote --heads --quiet origin | grep ${1} | cut -f 2- | $SORT_COMMAND -r -V )
+    localBranchesToDelete=$(git branch | awk -F ' +' '! /\(no branch\)/ {print $2}' | grep ${1})
+
+    put "Checking if branch $1 is merged to $reviewBranch with Gerrit"
+
+    if areCurrentBranchesClosed "$upstreamBranchesToDelete" || areCurrentBranchesClosed "$localBranchesToDelete" ; then
+        green "Branch is merged to $reviewBranch -> can be safely deleted"
+    else
+        warn "Branch is not merged to $reviewBranch, are you sure you want to delete it?"
+        confirm
+    fi
+
+    put "You are about to delete locally and remotely following branches:"
+    br
+
+    put "From local:"
+    printBranches "$localBranchesToDelete"
+    br
+
+    put "From ${reviewRemote}:"
+    printBranches "$upstreamBranchesToDelete"
+    br
+
+    confirm
+
+    exe git checkout $reviewBranch
+
+    deleteLocalBranches "$localBranchesToDelete"
+    deleteUpstreamBranches "$upstreamBranchesToDelete" $reviewRemote
+}
+
+# Args: no-arg
+finalize() {
+    put "Prune old branches..."
+    exe git fetch -p origin
+
+    put "Your actual active branches"
+    exe git branch -avvl
+
+    put "Old branches are deleted and forgotten forever. ☺"
+}
+
+## Real work starts here
+obtainReviewBranch
+obtainReviewRemote
+obtainReviewUrl
+
+case $# in
+0)  obtainCurrentBranch ;;
+1)  currentBranch=$1 ;;
+*)  printHelp
+    exit 1 ;;
+esac
+
+put "Cleaning up $currentBranch branch"
+br
+
+cleanupBranch $currentBranch
+finalize

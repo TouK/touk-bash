@@ -211,3 +211,21 @@ compareBranches() {
     exe git --no-pager log $1..$2 --pretty=format:'%C(yellow)%h %Cred%ad %Cblue%an%Cgreen%d %Creset%s' --date=iso --date=iso
     br
 }
+
+# $1 - local banches to delete
+deleteLocalBranches() {
+    for branch in $1
+    do
+        exe git branch -D $branch
+    done
+}
+
+# $1 - upstream banches to delete
+# $2 - remote
+deleteUpstreamBranches() {
+    for branch in $1
+    do
+        shortName=$(echo $branch | cut -f 3- -d /)
+        exe git push $2 --delete $shortName
+    done
+}

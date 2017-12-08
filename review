@@ -59,18 +59,17 @@ printRemoteHelp() {
 createRevBranch() {
     put "Last known branch for this review is $2"
     if [ "$2" == "" ]; then
-        local revBranch="$1_1"
+        revBranch="$1_1"
         put "No branches exist for this review."
     else
         put "Branches for this review already exist. New number is assigned."
         local lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
         local nextBranchNumber=$(( lastBranchNumber + 1 ))
-        local revBranch="$1_$nextBranchNumber"
+        revBranch="$1_$nextBranchNumber"
     fi
 
     put "Creating new branch for review $revBranch"
     exe git branch $revBranch
-    echo $revBranch
 }
 
 verifyGit() {
@@ -113,7 +112,8 @@ review() {
     hr
 
     exe git checkout $reviewBranch
-    revBranch=$(createRevBranch $coreBranchName $lastRevBranch)
+    # revBranch is assigned
+    createRevBranch $coreBranchName $lastRevBranch
     exe git checkout $revBranch
     exe git merge --squash $currentBranch
     exe git add -A

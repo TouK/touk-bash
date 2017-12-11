@@ -27,46 +27,12 @@ if [ "x$TOUK_BASH_HOME" = "x" ]; then
 fi
 
 # Includes
-. "$TOUK_BASH_HOME/touk-bash-git.sh"
+. "$TOUK_BASH_HOME/touk-bash-core.sh"
 . "$TOUK_BASH_HOME/touk-bash-macos.sh"
+. "$TOUK_BASH_HOME/touk-bash-git.sh"
+. "$TOUK_BASH_HOME/touk-bash-gerrit.sh"
 
-SUFFIX="rev"
 COMMIT_MSG_HOOK_NAME="commit-msg"
-
-obtainReviewRemote() {
-    reviewRemote=$(git config --get review.remote)
-    if [ "$reviewRemote" == "" ]; then
-        actualRemote=$(git remote)
-        warn "You don't have review.remote config option set in your git config."
-        put "Your actual remote is $actualRemote, so what you probably need to do is:"
-        put "    git config --add review.remote $actualRemote"
-        exit 1
-    fi
-}
-
-obtainReviewBranch() {
-    reviewBranch=$(git config --get review.branch)
-    if [ "$reviewBranch" == "" ]; then
-        warn "You don't have review.branch config option set in your git config."
-        put "It is probably master or develop so you can add it with:"
-        put "    git config --add review.branch master"
-        exit 1
-    fi
-}
-
-obtainReviewUrl() {
-    reviewUrl=$(git config --get review.url)
-    if [ "$reviewUrl" == "" ]; then
-        warn "You don't have review.url config option set in your git config."
-        put "Set it to your gerrit HTTP url like http://review.example.com:"
-        put "    git config --add review.url http://review.example.com"
-        exit 1
-    fi
-}
-
-obtainCurrentBranch() {
-    currentBranch=$(git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3-)
-}
 
 printHelp() {
     put "Usage:"
@@ -87,8 +53,8 @@ createRevBranch() {
         put "No branches exist for this review."
     else
         put "Branches for this review already exist. New number is assigned."
-        lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
-        nextBranchNumber=$(( lastBranchNumber + 1))
+        local lastBranchNumber=$(echo $2 | $SED_COMMAND 's/^.*_\([0-9]\+\)$/\1/g')
+        local nextBranchNumber=$(( lastBranchNumber + 1 ))
         revBranch="$1_$nextBranchNumber"
     fi
 
@@ -115,7 +81,7 @@ review() {
     # Create rev branch:
     # - new one if there is no rev branch yet for this feature
     # - with an increased number if there is already some rev branches for this feature
-    coreBranchName="${currentBranch}_${SUFFIX}"
+    coreBranchName="${currentBranch}_${reviewSuffix}"
     # Search for last known revision branch:
     # - grep by current branch name
     # - second output column is a ref name
@@ -128,7 +94,7 @@ review() {
     commitMessage=${*:1}
 
     if [ "$lastRevBranch" == "" ] && [ "$commitMessage" == "" ]; then
-        warn "This is your first review to $reviewRemote. You need to provide a commit message as a second argument."
+        warn "This is your first review to $reviewRemote. You need to provide a commit message as an argument."
         exit 1
     fi
 
@@ -199,6 +165,7 @@ review() {
 obtainReviewRemote
 obtainReviewBranch
 obtainReviewUrl
+obtainReviewSuffix
 obtainCurrentBranch
 verifyGit
 review $1

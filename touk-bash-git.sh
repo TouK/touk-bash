@@ -24,6 +24,12 @@
 . "$TOUK_BASH_HOME/touk-bash-core.sh"
 . "$TOUK_BASH_HOME/touk-bash-macos.sh"
 
+# Obtain currently checked out branch name
+# Args: no-arg
+obtainCurrentBranch() {
+    currentBranch=$(git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3-)
+}
+
 # Verify if you have everything committed
 # Args: no-arg
 verifyEverythingIsCommitted() {

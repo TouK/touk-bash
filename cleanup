@@ -42,7 +42,7 @@ printHelp() {
 # Args:
 #   $1 - branches to be verified
 branchesAreClosed() {
-    lastReviewBranch=$(echo "$1" | grep _${REVIEW_SUFFIX}_ | head -1 | cut -f 3- -d /)
+    lastReviewBranch=$(echo "$1" | grep _${reviewSuffix}_ | head -1 | cut -f 3- -d /)
     if [ "$lastReviewBranch" == "" ]; then
         return 1
     fi
@@ -59,7 +59,7 @@ branchesAreClosed() {
     else
         exe git log $reviewBranch --grep=$changeId
         br
-        put "Branch $currentBranch was reviewed here: ${reviewUrl}/#/q/${changeId}"
+        put "Branch was reviewed here: ${reviewUrl}/#/q/${changeId}"
         hr
         return 0
     fi
@@ -77,7 +77,7 @@ printBranches() {
 # Args:
 #   $1 - branch to be cleaned up
 cleanupBranch() {
-    put "Cleaning up $currentBranch branch"
+    put "Cleaning up $1 branch"
     br
 
     upstreamBranchesToDelete=$(git ls-remote --heads --quiet $reviewRemote | grep $1 | cut -f 2- | $SORT_COMMAND -r -V )
@@ -93,15 +93,14 @@ cleanupBranch() {
     fi
 
     put "You are about to delete locally and remotely following branches:"
-    br
 
+    br
     put "From local:"
     printBranches "$localBranchesToDelete"
-    br
 
+    br
     put "From ${reviewRemote}:"
     printBranches "$upstreamBranchesToDelete"
-    br
 
     confirm
 
@@ -126,6 +125,7 @@ finalize() {
 obtainReviewBranch
 obtainReviewRemote
 obtainReviewUrl
+obtainReviewSuffix
 obtainCurrentBranch
 
 case $# in

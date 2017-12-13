@@ -112,13 +112,10 @@ cleanupBranch() {
 
 # Args: no-arg
 finalize() {
-    put "Prune old branches..."
+    put "Prune old branches"
     exe git fetch -p $reviewRemote
 
-    put "Your actual active branches"
-    exe git branch -avvl
-
-    put "Old branches are deleted and forgotten forever. ☺"
+    put "Done!"
 }
 
 ## Real work starts here

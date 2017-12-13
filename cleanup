@@ -34,7 +34,12 @@ fi
 
 printHelp() {
     put "Usage:"
-    put "$0 [branchName]"
+    put "$0 [-a | --all | branchName]"
+    put ""
+    put "Examples:"
+    put "$0"
+    put "$0 my_merged_branch"
+    put "$0 -a"
     br
 }
 
@@ -73,7 +78,7 @@ printBranches() {
     done
 }
 
-# Cleans up a single branch by removing it all the related review branches both locally and on the remote
+# Cleans up a single topic branch merged to base branch by removing all related branches both locally and on the remote
 # Args:
 #   $1 - branch to be cleaned up
 cleanupBranch() {
@@ -110,6 +115,57 @@ cleanupBranch() {
     deleteUpstreamBranches "$upstreamBranchesToDelete" $reviewRemote
 }
 
+# Cleans up one branch merged to the base branch
+# Args:
+#   $1 - branch to be cleaned up
+cleanupOne() {
+    cleanupBranch $1
+    finalize
+}
+
+# Cleans up all branches merged to the base branch
+# Args: no-arg
+cleanupAll() {
+    put "Fetching branch info"
+    exe git fetch -p $reviewRemote
+
+    local branches=$(git ls-remote --heads --quiet | cut -f 2- | grep -v _${reviewSuffix}_)
+    branchesToDelete=()
+    for branch in $branches
+    do
+        put "Checking $branch"
+        originBranchesToDelete=$(git ls-remote --heads --quiet $reviewRemote | grep ${branch} | cut -f 2- | $SORT_COMMAND -r -V )
+        if branchesAreClosed "$originBranchesToDelete"; then
+            branchesToDelete+=($branch)
+        fi
+    done
+
+    if [ ${#branchesToDelete[@]} -eq 0 ] ; then
+        br
+        put "Already clean ☺"
+        exit 0
+    fi
+
+    br
+    put "Branches to delete:"
+    for branch in ${branchesToDelete[@]}
+    do
+        put "  $branch"
+    done
+
+    br
+    put "Do you want to delete all those branches?"
+    confirm
+
+    for branch in ${branchesToDelete[@]}
+    do
+        localBranchName=$(echo $branch | awk '{split($0, b, "/"); print b[3]}')
+        cleanupBranch $localBranchName
+    done
+
+    finalize
+}
+
 # Args: no-arg
 finalize() {
     put "Prune old branches"
@@ -126,10 +182,13 @@ obtainReviewSuffix
 obtainCurrentBranch
 
 case $# in
-0)  cleanupBranch $currentBranch ;;
-1)  cleanupBranch $1 ;;
-*)  printHelp
-    exit 1 ;;
+0)  cleanupOne $currentBranch ;;
+1)  case $1 in
+    --all | -a)  cleanupAll ;;
+        --help)  printHelp ; exit 1 ;;
+             *)  cleanupOne $1 ;;
+    esac ;;
+*)  printHelp ; exit 1 ;;
 esac
 
-finalize
+exit 0

@@ -80,6 +80,19 @@ exe() {
   exitIfLastCommandFailed
 }
 
+# Output a command, execute it and warn if it has failed
+# Args:
+#   $@ - many args
+# Example:
+#   exeNoExitCheck ls -lha
+exeNoExitCheck() {
+  echo -e "\033[36m   $ $@\033[0m"
+  LAST_COMMAND="$@"
+  "$@" 2>&1
+  LAST_EXIT_STATUS=$?
+  warnIfLastCommandFailed
+}
+
 # Execute a command without printing it and exit if it has failed
 # Args:
 #   $@ - many args
@@ -136,6 +149,16 @@ exitIfLastCommandFailed() {
     warn "Last executed command exited with status $LAST_EXIT_STATUS"
     warn "Aborting!"
     exit $?
+  fi
+}
+
+# Checks status of last executed command and warns if it was non-zero
+# It is mainly used by exeNoExitCheck, you don't need to call it.
+# Args: no-arg
+warnIfLastCommandFailed() {
+  if [ "$LAST_EXIT_STATUS" != "0" ]; then
+    warn "Last executed command was: $LAST_COMMAND"
+    warn "Last executed command exited with status $LAST_EXIT_STATUS"
   fi
 }
 

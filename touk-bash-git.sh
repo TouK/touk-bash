@@ -183,7 +183,7 @@ verifyCleanGit() {
 # Args:
 #   $1 - tag prefix
 tagLastCommit() {
-    d=$(date '+%y-%m-%d_%H-%M-%S')
+    d=$(date '+%Y-%m-%d_%H-%M-%S')
     tagName="$1_$d"
     put "Tagging git with tag $tagName"
     exe git tag $tagName
